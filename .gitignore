@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+setup-lists/
+src/DjSetupList.Web/App_Data/
+*.user
+*.suo
+.vs/
+.DS_Store
