@@ -2,6 +2,18 @@
 
 DJさんが現場前にセットアップリスト（機材・連絡・音源）を作るための C# ツールです。
 
+## 最新の E2E
+
+`dotnet test` が成功すると、この節が最新の実行結果に置き換わります。
+
+<!-- e2e-result:start -->
+最終実行: 2026-10-09 19:49 JST
+
+![E2E: リスト作成、機材チェック、ローカル音源の添付](docs/e2e/setup-list-e2e.gif)
+
+[WebM で再生](docs/e2e/setup-list-e2e.webm)
+<!-- e2e-result:end -->
+
 **テンプレートは静的なチェックリスト**です。曲データはテンプレートからは取りません。音源は別レイヤで:
 
 | ソース | いまできること | 必要な設定 |
@@ -71,7 +83,7 @@ dotnet run --project src/DjSetupList.Web --urls http://127.0.0.1:5088
 dotnet test
 ```
 
-`DjSetupList.E2E` は Chromium で Web UI を操作します。リスト作成、チェック、ローカル音源の検索と添付、保存済みリスト、連携ステータスまでを一本のシナリオで確認します。初回は Playwright が Chromium を取得します。
+`DjSetupList.E2E` は Chromium で Web UI を操作します。リスト作成、チェック、ローカル音源の検索と添付、保存済みリスト、連携ステータスまでを一本のシナリオで確認します。成功すると [最新の E2E](#最新の-e2e) の GIF と WebM を更新します。初回は Playwright が Chromium を取得します。GIF の作成には ffmpeg が必要です。
 
 ## 診断
 

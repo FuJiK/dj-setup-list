@@ -96,9 +96,8 @@ public sealed class SetupListBrowserE2E : IClassFixture<E2EServer>
         var video = page.Video ?? throw new InvalidOperationException("動画が開始されていません。");
         await context.CloseAsync();
         var recorded = await video.PathAsync();
-        var webm = Path.Combine(artifacts, "setup-list-e2e.webm");
-        File.Copy(recorded, webm, overwrite: true);
-        if (!string.Equals(Path.GetFullPath(recorded), Path.GetFullPath(webm), StringComparison.Ordinal))
+        E2EReport.Publish(FindRepoRoot(), recorded);
+        if (File.Exists(recorded))
             File.Delete(recorded);
     }
 
