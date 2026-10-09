@@ -12,16 +12,27 @@ public sealed class SetupListBrowserE2E : IClassFixture<E2EServer>
     [Fact]
     public async Task Dj_can_build_a_list_check_gear_and_attach_local_music()
     {
+        var artifacts = Path.Combine(FindRepoRoot(), "e2e-artifacts");
+        Directory.CreateDirectory(artifacts);
+
         using var playwright = await Playwright.CreateAsync();
         await using var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {
-            Headless = true
+            Headless = true,
+            SlowMo = 350
         });
-        var page = await browser.NewPageAsync();
+        await using var context = await browser.NewContextAsync(new BrowserNewContextOptions
+        {
+            ViewportSize = new ViewportSize { Width = 1280, Height = 800 },
+            RecordVideoDir = artifacts,
+            RecordVideoSize = new RecordVideoSize { Width = 1280, Height = 800 }
+        });
+        var page = await context.NewPageAsync();
         page.SetDefaultTimeout(15_000);
 
         await page.GotoAsync(_server.BaseUrl);
         await Expect(page.Locator("#view-home h1")).ToContainTextAsync("現場前のセットアップ");
+        await page.WaitForTimeoutAsync(600);
 
         await page.Locator("#view-home [data-nav=create]").ClickAsync();
         await page.Locator("#create-form select[name=templateId]").SelectOptionAsync("club");
@@ -37,9 +48,11 @@ public sealed class SetupListBrowserE2E : IClassFixture<E2EServer>
         await Expect(detail).ToContainTextAsync("Club Neon");
         await Expect(detail).ToContainTextAsync("進捗 0/15");
         await Expect(detail).ToContainTextAsync("音源はまだ添付されていません");
+        await page.WaitForTimeoutAsync(700);
 
         await detail.Locator("[data-item]").Filter(new() { HasText = "USB（メイン）" }).ClickAsync();
         await Expect(detail).ToContainTextAsync("進捗 1/15");
+        await page.WaitForTimeoutAsync(500);
 
         await page.Locator("nav [data-nav=music]").ClickAsync();
         await page.Locator("#search-form select[name=source]").SelectOptionAsync("local");
@@ -54,6 +67,7 @@ public sealed class SetupListBrowserE2E : IClassFixture<E2EServer>
         await Expect(detail).ToContainTextAsync("Opening Track");
         await Expect(detail).ToContainTextAsync("Peak Time");
         await Expect(detail).ToContainTextAsync("offline");
+        await page.WaitForTimeoutAsync(800);
 
         await page.Locator("nav [data-nav=lists]").ClickAsync();
         var lists = page.Locator("#lists");
@@ -65,6 +79,7 @@ public sealed class SetupListBrowserE2E : IClassFixture<E2EServer>
         await lists.Locator(".list-row").ClickAsync();
         await Expect(detail.Locator("h2")).ToHaveTextAsync("Friday Night");
         await Expect(detail.Locator(".check.on")).ToHaveCountAsync(1);
+        await page.WaitForTimeoutAsync(600);
 
         await page.Locator("nav [data-nav=sources]").ClickAsync();
         var sources = page.Locator("#sources");
@@ -72,8 +87,31 @@ public sealed class SetupListBrowserE2E : IClassFixture<E2EServer>
         await Expect(sources).ToContainTextAsync("利用可");
         await Expect(sources).ToContainTextAsync("Spotify");
         await Expect(sources).ToContainTextAsync("未設定");
+        await page.WaitForTimeoutAsync(800);
 
         await page.Locator("nav [data-nav=home]").ClickAsync();
         await Expect(page.Locator("#view-home")).ToBeVisibleAsync();
+        await page.WaitForTimeoutAsync(400);
+
+        var video = page.Video ?? throw new InvalidOperationException("動画が開始されていません。");
+        await context.CloseAsync();
+        var recorded = await video.PathAsync();
+        var webm = Path.Combine(artifacts, "setup-list-e2e.webm");
+        File.Copy(recorded, webm, overwrite: true);
+        if (!string.Equals(Path.GetFullPath(recorded), Path.GetFullPath(webm), StringComparison.Ordinal))
+            File.Delete(recorded);
+    }
+
+    private static string FindRepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null)
+        {
+            if (File.Exists(Path.Combine(dir.FullName, "DjSetupList.sln")))
+                return dir.FullName;
+            dir = dir.Parent;
+        }
+
+        throw new InvalidOperationException("DjSetupList.sln が見つかりません。");
     }
 }

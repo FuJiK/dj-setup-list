@@ -6,3 +6,4 @@ src/DjSetupList.Web/App_Data/
 *.suo
 .vs/
 .DS_Store
+e2e-artifacts/
