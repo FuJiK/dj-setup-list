@@ -83,6 +83,8 @@ dotnet run --project src/DjSetupList.Web --urls http://127.0.0.1:5088
 dotnet test
 ```
 
+CI/CD の分岐（単体 CI / PR 向け E2E / main で README 更新）は [docs/ci-cd.md](docs/ci-cd.md) を参照。
+
 `DjSetupList.E2E` は Chromium で Web UI を操作します。リスト作成、チェック、ローカル音源の検索と添付、保存済みリスト、連携ステータスまでを一本のシナリオで確認します。成功すると [最新の E2E](#最新の-e2e) の GIF と WebM を更新します。初回は Playwright が Chromium を取得します。GIF の作成には ffmpeg が必要です。
 
 ## 診断

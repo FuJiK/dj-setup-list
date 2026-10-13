@@ -96,9 +96,18 @@ public sealed class SetupListBrowserE2E : IClassFixture<E2EServer>
         var video = page.Video ?? throw new InvalidOperationException("動画が開始されていません。");
         await context.CloseAsync();
         var recorded = await video.PathAsync();
-        E2EReport.Publish(FindRepoRoot(), recorded);
+        if (!ShouldSkipE2EReport())
+            E2EReport.Publish(FindRepoRoot(), recorded);
         if (File.Exists(recorded))
             File.Delete(recorded);
+    }
+
+    /// <summary>CI の PR ゲートでは README / GIF を更新しない（<c>DJ_E2E_SKIP_REPORT=1</c>）。</summary>
+    private static bool ShouldSkipE2EReport()
+    {
+        var value = Environment.GetEnvironmentVariable("DJ_E2E_SKIP_REPORT");
+        return string.Equals(value, "1", StringComparison.Ordinal)
+               || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string FindRepoRoot()

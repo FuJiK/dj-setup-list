@@ -1,0 +1,63 @@
+name: E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      update_readme:
+        description: README / docs/e2e を更新する（main 向けフル実行）
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    env:
+      DJ_LOCAL_LIBRARY: ${{ github.workspace }}/sample-library
+      DJ_E2E_SKIP_REPORT: ${{ github.event_name == 'pull_request' && '1' || (github.event_name == 'workflow_dispatch' && inputs.update_readme == false && '1' || '0') }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Install ffmpeg
+        if: env.DJ_E2E_SKIP_REPORT != '1'
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Restore
+        run: dotnet restore DjSetupList.sln
+
+      - name: Build
+        run: dotnet build DjSetupList.sln --configuration Release --no-restore
+
+      - name: E2E (Playwright)
+        run: dotnet test tests/DjSetupList.E2E/DjSetupList.E2E.csproj --configuration Release --no-build --verbosity normal
+
+      - name: Upload E2E recordings
+        if: env.DJ_E2E_SKIP_REPORT != '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-recordings
+          path: |
+            docs/e2e/setup-list-e2e.webm
+            docs/e2e/setup-list-e2e.gif
+
+      - name: Commit updated README and recordings
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && env.DJ_E2E_SKIP_REPORT != '1'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/e2e README.md
+          if git diff --staged --quiet; then
+            echo "No E2E doc changes to commit."
+            exit 0
+          fi
+          git commit -m "docs: update E2E recording from CI [skip ci]"
+          git push
